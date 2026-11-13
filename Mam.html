@@ -1,1 +1,902 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Для мамы</title>
+    <!-- Подключение шрифтов: Cormorant Garamond, Lora и Caveat для рукописной подписи -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js для мягкого бумажного шелеста и теплого аккорда (по желанию) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#FAF6F0',
+                        paperDark: '#F0E9DF',
+                        envelope: '#EAE0D2',
+                        envelopeFlap: '#E2D5C3',
+                        envelopeInside: '#D6C7B2',
+                        ink: '#2C2623',
+                        inkLight: '#6E645E',
+                        terracotta: '#9E473B',
+                        terracottaDark: '#7D352B',
+                        sage: '#6B7F6E',
+                        sageLight: '#8FA392',
+                        gold: '#C5A880'
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        body: ['"Lora"', 'Georgia', 'serif'],
+                        hand: ['"Caveat"', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Базовые настройки и текстура хлопковой бумаги */
+        :root {
+            --bg-paper: #FAF6F0;
+            --ink: #2C2623;
+            --terracotta: #9E473B;
+            --sage: #6B7F6E;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #EFE9E0;
+            color: var(--ink);
+            font-family: 'Lora', serif;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Тонкая SVG-текстура бумаги поверх фона */
+        .paper-texture {
+            background-color: #FAF6F0;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(255,255,255,0.6) 0%, transparent 60%),
+                radial-gradient(at 80% 80%, rgba(214, 199, 178, 0.25) 0%, transparent 60%);
+            position: relative;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 40;
+            opacity: 0.35;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+        }
+
+        /* Стили конверта */
+        .envelope-scene {
+            perspective: 1200px;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 340px;
+            height: 230px;
+            margin: 0 auto;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        @media (min-width: 640px) {
+            .envelope-wrapper {
+                width: 440px;
+                height: 295px;
+            }
+        }
+
+        .envelope-wrapper:hover {
+            transform: translateY(-4px);
+        }
+
+        /* Задняя часть конверта */
+        .envelope-back {
+            position: absolute;
+            inset: 0;
+            background: #DECeb8;
+            border-radius: 6px;
+            box-shadow: 
+                0 20px 40px -15px rgba(44, 38, 35, 0.18),
+                0 4px 12px -2px rgba(44, 38, 35, 0.08),
+                inset 0 0 30px rgba(158, 71, 59, 0.04);
+            overflow: hidden;
+        }
+
+        /* Листок письма внутри конверта (превью) */
+        .envelope-letter-preview {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            top: 8%;
+            bottom: 8%;
+            background: #FAF6F0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.9s cubic-bezier(0.34, 1.15, 0.64, 1) 0.35s;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 22px;
+            border: 1px solid rgba(197, 168, 128, 0.35);
+        }
+
+        /* Боковые и нижний клапаны конверта */
+        .envelope-pocket {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .pocket-left {
+            position: absolute;
+            inset: 0;
+            background: #E8DDD0;
+            clip-path: polygon(0 0, 52% 52%, 0 100%);
+        }
+
+        .pocket-right {
+            position: absolute;
+            inset: 0;
+            background: #E4D7C7;
+            clip-path: polygon(100% 0, 48% 52%, 100% 100%);
+        }
+
+        .pocket-bottom {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, #EADFD2 0%, #EFE6DB 100%);
+            clip-path: polygon(0 100%, 50% 45%, 100% 100%);
+            filter: drop-shadow(0 -2px 4px rgba(44, 38, 35, 0.06));
+        }
+
+        /* Верхний открывающийся клапан */
+        .envelope-flap {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #E2D5C4 0%, #EADFD2 100%);
+            clip-path: polygon(0 0, 50% 58%, 100% 0);
+            transform-origin: top center;
+            transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s 0.35s;
+            z-index: 4;
+            filter: drop-shadow(0 3px 5px rgba(44, 38, 35, 0.1));
+        }
+
+        /* Сургучная печать */
+        .wax-seal {
+            position: absolute;
+            top: 54%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 68px;
+            height: 68px;
+            z-index: 5;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            filter: drop-shadow(0 6px 10px rgba(74, 24, 17, 0.32));
+        }
+
+        .envelope-wrapper:hover .wax-seal {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        /* Состояние открытого конверта */
+        .envelope-open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .envelope-open .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -80%) scale(0.8);
+            pointer-events: none;
+        }
+
+        .envelope-open .envelope-letter-preview {
+            transform: translateY(-95px);
+        }
+
+        /* Оформление самой открытки */
+        .card-container {
+            background-color: #FAF6F0;
+            box-shadow: 
+                0 25px 60px -15px rgba(44, 38, 35, 0.14),
+                0 4px 16px -2px rgba(44, 38, 35, 0.06),
+                0 0 0 1px rgba(197, 168, 128, 0.25);
+            position: relative;
+            transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Двойная полиграфическая рамка с тиснением */
+        .card-double-border {
+            border: 1px solid rgba(158, 71, 59, 0.28);
+            position: relative;
+        }
+
+        .card-double-border::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1px solid rgba(107, 127, 110, 0.25);
+            pointer-events: none;
+        }
+
+        /* Редактируемые поля в режиме конструктора */
+        .editable-active [data-editable="true"] {
+            outline: 1px dashed #9E473B;
+            background-color: rgba(158, 71, 59, 0.04);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin: -2px -6px;
+            cursor: text;
+            transition: background-color 0.2s ease;
+        }
+
+        .editable-active [data-editable="true"]:focus {
+            outline: 1.5px solid #9E473B;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Анимация падающих лепестков */
+        .petal {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            animation: petal-fall linear forwards;
+        }
+
+        @keyframes petal-fall {
+            0% {
+                transform: translateY(-20px) rotate(0deg) translateX(0);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.9;
+            }
+            85% {
+                opacity: 0.85;
+            }
+            100% {
+                transform: translateY(100vh) rotate(320deg) translateX(40px);
+                opacity: 0;
+            }
+        }
+
+        /* Мягкое свечение для сургучной печати */
+        @keyframes pulse-gentle {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.04); }
+        }
+
+        .seal-pulse {
+            animation: pulse-gentle 3s infinite ease-in-out;
+        }
+
+        /* Скрытие полосы прокрутки для эстетики */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #EFE9E0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D5C8B8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center py-6 px-4 sm:py-12 selection:bg-terracotta/15 selection:text-terracotta">
+
+    <!-- Текстурный шум бумаги -->
+    <div class="noise-overlay"></div>
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ ИНСТРУМЕНТОВ (Ненавязчивая, для настройки перед отправкой) -->
+    <header id="topControls" class="w-full max-w-xl flex items-center justify-between gap-2 z-30 mb-4 opacity-90 transition-opacity duration-300">
+        <button id="backToEnvelopeBtn" onclick="closeCardToEnvelope()" class="hidden items-center gap-1.5 text-xs sm:text-sm text-inkLight hover:text-ink transition-colors py-1.5 px-3 rounded-full bg-paper/80 border border-gold/30 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span>Свернуть в конверт</span>
+        </button>
+        <div class="flex-1"></div>
+        <div id="customizerControls" class="flex items-center gap-2">
+            <button id="toggleEditBtn" onclick="toggleEditMode()" class="flex items-center gap-1.5 text-xs sm:text-sm text-inkLight hover:text-ink transition-all py-1.5 px-3.5 rounded-full bg-paper/90 border border-gold/40 shadow-sm hover:border-terracotta/50">
+                <svg class="w-3.5 h-3.5 text-terracotta" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+                <span id="editBtnLabel">Изменить текст / Подписать</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ПАНЕЛЬ СОХРАНЕНИЯ В РЕЖИМЕ РЕДАКТИРОВАНИЯ -->
+    <div id="editBanner" class="hidden w-full max-w-xl mb-5 z-30 bg-paper border border-terracotta/30 rounded-lg p-3.5 shadow-md text-xs sm:text-sm text-ink">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <p class="font-medium text-terracotta flex items-center gap-1.5">
+                    <span>Режим редактирования</span>
+                </p>
+                <p class="text-inkLight text-xs mt-0.5">Нажмите на любой абзац или подпись прямо на открытке, чтобы вписать свои слова.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button onclick="copyShareLink()" class="py-1.5 px-3 rounded bg-sage text-paper hover:bg-sage/90 transition-colors text-xs font-medium flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                    <span>Ссылка с моим текстом</span>
+                </button>
+                <button onclick="downloadReadyHtml()" class="py-1.5 px-3 rounded bg-terracotta text-paper hover:bg-terracottaDark transition-colors text-xs font-medium flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    <span>Скачать index.html</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- СЦЕНА 1: ЗАКРЫТЫЙ КОНВЕРТ -->
+    <main class="flex-1 flex flex-col items-center justify-center w-full max-w-2xl my-auto z-20">
+        
+        <section id="envelopeScene" class="envelope-scene w-full flex flex-col items-center justify-center py-8">
+            
+            <!-- Надпись над конвертом -->
+            <div class="text-center mb-8 px-4">
+                <p class="font-serif italic text-lg sm:text-xl text-inkLight tracking-wide">Личное письмо</p>
+                <h1 id="envelopeRecipientTitle" class="font-serif text-3xl sm:text-4xl font-medium text-ink mt-1">Для мамы</h1>
+            </div>
+
+            <!-- Интерактивный конверт -->
+            <div id="envelopeBox" onclick="openEnvelope()" class="envelope-wrapper" role="button" tabindex="0" aria-label="Открыть конверт для мамы">
+                <!-- Задник конверта -->
+                <div class="envelope-back"></div>
+
+                <!-- Выглядывающее письмо внутри -->
+                <div class="envelope-letter-preview">
+                    <!-- Миниатюрная веточка на письме -->
+                    <svg class="w-8 h-8 text-sage opacity-80 mb-1" viewBox="0 0 64 64" fill="none">
+                        <path d="M32 54C32 38 36 22 44 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        <path d="M35 38C29 36 24 31 23 25C29 25 34 30 35 38Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M37 29C43 28 48 24 50 18C44 18 39 22 37 29Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M33 46C27 45 22 41 20 35C26 35 31 39 33 46Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1.2"/>
+                    </svg>
+                    <span class="font-serif italic text-sm text-inkLight">Мамочке...</span>
+                </div>
+
+                <!-- Карман конверта -->
+                <div class="envelope-pocket">
+                    <div class="pocket-left"></div>
+                    <div class="pocket-right"></div>
+                    <div class="pocket-bottom"></div>
+                </div>
+
+                <!-- Верхний клапан -->
+                <div class="envelope-flap"></div>
+
+                <!-- Сургучная печать с ботаническим оттиском -->
+                <div class="wax-seal seal-pulse" title="Нажмите, чтобы распечатать письмо">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <defs>
+                            <radialGradient id="waxGrad" cx="38%" cy="32%" r="65%">
+                                <stop offset="0%" stop-color="#B85648"/>
+                                <stop offset="55%" stop-color="#9E473B"/>
+                                <stop offset="90%" stop-color="#742D23"/>
+                                <stop offset="100%" stop-color="#5B2119"/>
+                            </radialGradient>
+                        </defs>
+                        <!-- Неровный край настоящего сургуча -->
+                        <path d="M50 4 C61 3, 72 8, 80 15 C89 22, 95 33, 96 45 C97 57, 93 69, 85 78 C77 88, 65 95, 52 96 C39 97, 26 92, 17 83 C8 74, 4 61, 5 48 C6 35, 11 22, 21 14 C30 6, 40 5, 50 4 Z" fill="url(#waxGrad)"/>
+                        <!-- Внутреннее вдавленное кольцо печати -->
+                        <circle cx="50" cy="50" r="32" fill="none" stroke="#68261D" stroke-width="2.2" opacity="0.7"/>
+                        <circle cx="50" cy="50" r="30.5" fill="none" stroke="#C97366" stroke-width="0.9" opacity="0.5"/>
+                        <!-- Оттиск веточки и сердца внутри печати -->
+                        <path d="M50 67 C50 67, 36 56, 36 45 C36 39, 41 35, 46 35 C48.5 35, 50 37, 50 39 C50 37, 51.5 35, 54 35 C59 35, 64 39, 64 45 C64 56, 50 67, 50 67 Z" fill="#823227" stroke="#D38377" stroke-width="1.3"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Подсказка под конвертом -->
+            <button onclick="openEnvelope()" class="mt-8 group flex flex-col items-center focus:outline-none">
+                <span class="text-xs sm:text-sm tracking-widest uppercase text-inkLight group-hover:text-terracotta transition-colors">
+                    Коснись печати, чтобы открыть
+                </span>
+                <span class="w-10 h-px bg-gold/60 mt-2 group-hover:w-16 group-hover:bg-terracotta/60 transition-all duration-300"></span>
+            </button>
+        </section>
+
+        <!-- СЦЕНА 2: ОТКРЫТАЯ ДИЗАЙНЕРСКАЯ ОТКРЫТКА -->
+        <article id="cardScene" class="hidden opacity-0 translate-y-6 w-full max-w-xl mx-auto">
+            <div class="card-container paper-texture rounded-md p-4 sm:p-7">
+                
+                <!-- Двойная рамка открытки -->
+                <div class="card-double-border px-5 py-8 sm:px-10 sm:py-12">
+
+                    <!-- Верхняя ботаническая иллюстрация (оливковая веточка и сухоцветы ручной отрисовки) -->
+                    <div class="flex flex-col items-center mb-6 sm:mb-8">
+                        <svg class="w-36 sm:w-44 h-16 text-sage" viewBox="0 0 220 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Главный стебель -->
+                            <path d="M25 56 C75 52, 135 38, 195 22" stroke="#6B7F6E" stroke-width="1.3" stroke-linecap="round"/>
+                            <path d="M55 51 C85 35, 115 32, 155 48" stroke="#9E473B" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="1 2" opacity="0.6"/>
+                            
+                            <!-- Листья оливы / эвкалипта -->
+                            <path d="M62 49 C53 41, 48 31, 52 22 C60 27, 65 37, 62 49 Z" fill="#6B7F6E" fill-opacity="0.18" stroke="#6B7F6E" stroke-width="1.15"/>
+                            <path d="M94 43 C87 33, 84 22, 90 13 C97 19, 99 31, 94 43 Z" fill="#6B7F6E" fill-opacity="0.22" stroke="#6B7F6E" stroke-width="1.15"/>
+                            <path d="M128 36 C122 26, 122 15, 129 8 C135 15, 134 26, 128 36 Z" fill="#6B7F6E" fill-opacity="0.18" stroke="#6B7F6E" stroke-width="1.15"/>
+                            <path d="M162 29 C158 20, 160 11, 167 6 C171 13, 168 22, 162 29 Z" fill="#6B7F6E" fill-opacity="0.22" stroke="#6B7F6E" stroke-width="1.15"/>
+                            
+                            <!-- Нижние листья -->
+                            <path d="M76 47 C84 55, 95 59, 105 55 C98 47, 88 45, 76 47 Z" fill="#6B7F6E" fill-opacity="0.15" stroke="#6B7F6E" stroke-width="1.1"/>
+                            <path d="M112 40 C121 47, 132 50, 142 45 C134 38, 123 37, 112 40 Z" fill="#6B7F6E" fill-opacity="0.18" stroke="#6B7F6E" stroke-width="1.1"/>
+                            <path d="M146 33 C155 39, 166 40, 174 35 C167 29, 156 29, 146 33 Z" fill="#6B7F6E" fill-opacity="0.15" stroke="#6B7F6E" stroke-width="1.1"/>
+
+                            <!-- Мелкие терракотовые бутоны сухоцветов -->
+                            <circle cx="48" cy="39" r="2.6" fill="#9E473B" opacity="0.8"/>
+                            <circle cx="112" cy="22" r="2.3" fill="#9E473B" opacity="0.75"/>
+                            <circle cx="148" cy="17" r="2.5" fill="#9E473B" opacity="0.8"/>
+                            <circle cx="182" cy="25" r="2.2" fill="#9E473B" opacity="0.7"/>
+                            <circle cx="88" cy="57" r="2" fill="#C5A880" opacity="0.9"/>
+                        </svg>
+
+                        <!-- Заголовок обращения -->
+                        <h2 id="letterHeading" data-editable="true" class="font-serif text-3xl sm:text-4xl font-normal text-ink text-center tracking-normal leading-tight mt-2">
+                            Родная моя мамочка,
+                        </h2>
+                        <div class="w-12 h-px bg-terracotta/40 mt-4"></div>
+                    </div>
+
+                    <!-- Основной текст письма (искренний, человеческий, без штампов) -->
+                    <div class="space-y-4 sm:space-y-5 text-base sm:text-[17px] leading-relaxed sm:leading-[1.85] text-ink/90 font-body">
+                        <p id="letterPara1" data-editable="true">
+                            Мне очень неловко за то, как всё вышло. Я знаю, что расстроил тебя, и мне правда тяжело на душе от того, что из-за моих слов или поступков тебе стало грустно и обидно.
+                        </p>
+
+                        <p id="letterPara2" data-editable="true">
+                            Иногда я сначала делаю или говорю на эмоциях, и только потом понимаю, как это ранит самого близкого мне человека. Ты этого точно не заслужила. Я был неправ и очень жалею об этом.
+                        </p>
+
+                        <p id="letterPara3" data-editable="true">
+                            Я вижу и очень ценю всё, что ты для меня делаешь — твою заботу, терпение и то, как ты всегда переживаешь за меня, даже когда я этого не показываю. Пожалуйста, не держи на меня обиду.
+                        </p>
+
+                        <p id="letterPara4" data-editable="true" class="font-serif italic text-xl sm:text-2xl text-terracotta pt-1">
+                            Прости меня, мам. Я тебя очень сильно люблю.
+                        </p>
+                    </div>
+
+                    <!-- Блок подписи и даты -->
+                    <div class="mt-8 sm:mt-10 pt-5 border-t border-gold/30 flex items-end justify-between gap-4">
+                        <div class="text-xs sm:text-sm text-inkLight font-serif italic" id="letterDate" data-editable="true">
+                            С теплом и любовью
+                        </div>
+                        <div class="text-right">
+                            <p id="letterSignature" data-editable="true" class="font-hand text-2xl sm:text-3xl text-ink leading-none">
+                                Твой любящий ребёнок
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ИНТЕРАКТИВНЫЙ БЛОК «Мам, прости меня?» -->
+                    <div class="mt-10 pt-7 border-t border-dashed border-gold/40 text-center">
+                        
+                        <!-- Состояние до нажатия -->
+                        <div id="forgivePrompt" class="transition-all duration-500">
+                            <p class="font-serif text-xl sm:text-2xl text-ink mb-4">
+                                Мам, ты меня простишь?
+                            </p>
+                            <button id="forgiveBtn" onclick="triggerForgiveness()" class="group relative inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-terracotta text-paper font-body text-sm sm:text-base tracking-wide shadow-md hover:bg-terracottaDark active:scale-[0.98] transition-all duration-300">
+                                <span>Прощаю</span>
+                                <span class="inline-block transition-transform duration-300 group-hover:scale-125">❤️</span>
+                            </button>
+                        </div>
+
+                        <!-- Состояние после нажатия кнопки «Прощаю ❤️» -->
+                        <div id="forgiveResponse" class="hidden opacity-0 transform translate-y-2 transition-all duration-700 bg-paperDark/70 border border-sage/30 rounded-lg p-5 sm:p-6">
+                            <!-- Иконка веточки/сердца -->
+                            <div class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-sage/15 text-sage mb-3">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                            </div>
+                            <h3 class="font-serif text-2xl sm:text-3xl text-ink font-medium">
+                                Спасибо, мам!
+                            </h3>
+                            <p class="text-sm sm:text-base text-ink/85 mt-2 leading-relaxed max-w-md mx-auto">
+                                Я тебя очень люблю. Обещаю беречь твои нервы и радовать тебя как можно чаще. Обнимаю крепко-крепко!
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Нижний угловой растительный орнамент -->
+                    <div class="mt-6 flex justify-center opacity-50">
+                        <svg class="w-20 h-6 text-gold" viewBox="0 0 100 24" fill="none">
+                            <path d="M10 12 H40 M60 12 H90" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+                            <path d="M50 5 L55 12 L50 19 L45 12 Z" stroke="currentColor" stroke-width="1" fill="#9E473B" fill-opacity="0.2"/>
+                        </svg>
+                    </div>
+
+                </div>
+            </div>
+        </article>
+
+    </main>
+
+    <!-- Ненавязчивое всплывающее уведомление (вместо системного alert) -->
+    <div id="toastNotice" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-3 transition-all duration-300 bg-ink text-paper text-xs sm:text-sm px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-sageLight"></span>
+        <span id="toastText">Сохранено</span>
+    </div>
+
+    <!-- Футер -->
+    <footer class="w-full text-center py-3 text-xs text-inkLight/60 font-serif italic z-10">
+        Сделано с любовью специально для мамы
+    </footer>
+
+    <script>
+        // Состояние открытки
+        let isEnvelopeOpened = false;
+        let isEditMode = false;
+
+        // Список ID редактируемых элементов
+        const editableIds = [
+            'letterHeading',
+            'letterPara1',
+            'letterPara2',
+            'letterPara3',
+            'letterPara4',
+            'letterDate',
+            'letterSignature'
+        ];
+
+        // Инициализация при загрузке: проверяем URL-параметры и localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCustomContent();
+        });
+
+        // Мягкий бумажный звук или теплый аккорд через Tone.js (без внешних файлов)
+        function playGentleSound(type) {
+            try {
+                if (typeof Tone === 'undefined') return;
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+
+                const synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 0.08,
+                        decay: 0.6,
+                        sustain: 0.1,
+                        release: 1.4
+                    },
+                    volume: -18
+                }).toDestination();
+
+                const now = Tone.now();
+                if (type === 'open') {
+                    synth.triggerAttackRelease(['F4', 'A4', 'C5'], '8n', now);
+                    synth.triggerAttackRelease(['D5'], '4n', now + 0.18);
+                } else if (type === 'forgive') {
+                    synth.triggerAttackRelease(['F4', 'A4', 'C5', 'F5'], '4n', now);
+                    synth.triggerAttackRelease(['G4', 'B4', 'D5', 'G5'], '2n', now + 0.25);
+                }
+            } catch (e) {
+                // Игнорируем, если браузер блокирует автовоспроизведение аудио
+            }
+        }
+
+        // Открытие конверта и плавный показ открытки
+        function openEnvelope() {
+            if (isEnvelopeOpened) return;
+            isEnvelopeOpened = true;
+
+            playGentleSound('open');
+
+            const envelopeBox = document.getElementById('envelopeBox');
+            const envelopeScene = document.getElementById('envelopeScene');
+            const cardScene = document.getElementById('cardScene');
+            const backBtn = document.getElementById('backToEnvelopeBtn');
+
+            // 1. Запускаем анимацию клапана и выезда письма
+            envelopeBox.classList.add('envelope-open');
+
+            // 2. Плавно скрываем конверт и разворачиваем открытку
+            setTimeout(() => {
+                envelopeScene.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    envelopeScene.classList.add('hidden');
+                    cardScene.classList.remove('hidden');
+                    backBtn.classList.remove('hidden');
+                    backBtn.classList.add('flex');
+
+                    // Небольшая задержка для плавного появления карточки
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            cardScene.classList.remove('opacity-0', 'translate-y-6');
+                            cardScene.classList.add('opacity-100', 'translate-y-0');
+                        });
+                    });
+                }, 420);
+            }, 700);
+        }
+
+        // Возврат к закрытому конверту
+        function closeCardToEnvelope() {
+            if (isEditMode) {
+                toggleEditMode();
+            }
+
+            const envelopeBox = document.getElementById('envelopeBox');
+            const envelopeScene = document.getElementById('envelopeScene');
+            const cardScene = document.getElementById('cardScene');
+            const backBtn = document.getElementById('backToEnvelopeBtn');
+
+            cardScene.classList.add('opacity-0', 'translate-y-6');
+            cardScene.classList.remove('opacity-100', 'translate-y-0');
+            backBtn.classList.add('hidden');
+            backBtn.classList.remove('flex');
+
+            setTimeout(() => {
+                cardScene.classList.add('hidden');
+                envelopeBox.classList.remove('envelope-open');
+                envelopeScene.classList.remove('hidden');
+
+                requestAnimationFrame(() => {
+                    envelopeScene.classList.remove('opacity-0', 'scale-95');
+                });
+                isEnvelopeOpened = false;
+            }, 450);
+        }
+
+        // Реакция на кнопку «Прощаю ❤️»
+        function triggerForgiveness() {
+            playGentleSound('forgive');
+            spawnBotanicalPetals();
+
+            const promptBox = document.getElementById('forgivePrompt');
+            const responseBox = document.getElementById('forgiveResponse');
+
+            promptBox.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                promptBox.classList.add('hidden');
+                responseBox.classList.remove('hidden');
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        responseBox.classList.remove('opacity-0', 'translate-y-2');
+                        responseBox.classList.add('opacity-100', 'translate-y-0');
+                    });
+                });
+            }, 320);
+        }
+
+        // Деликатный листопад из лепестков и маленьких сердечек
+        function spawnBotanicalPetals() {
+            const colors = ['#9E473B', '#6B7F6E', '#C5A880', '#D38377', '#8FA392'];
+            const count = 28;
+
+            for (let i = 0; i < count; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+
+                const color = colors[i % colors.length];
+                const isHeart = i % 3 === 0;
+                const size = Math.floor(Math.random() * 10) + 12;
+
+                petal.style.left = `${Math.random() * 94 + 3}vw`;
+                petal.style.top = `-24px`;
+                petal.style.animationDuration = `${(Math.random() * 2.5 + 3.2).toFixed(2)}s`;
+                petal.style.animationDelay = `${(Math.random() * 1.1).toFixed(2)}s`;
+
+                if (isHeart) {
+                    petal.innerHTML = `
+                        <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" opacity="0.85">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>`;
+                } else {
+                    petal.innerHTML = `
+                        <svg width="${size}" height="${size + 4}" viewBox="0 0 20 26" fill="${color}" opacity="0.8">
+                            <path d="M10 1 C4 7, 2 16, 10 25 C18 16, 16 7, 10 1 Z"/>
+                        </svg>`;
+                }
+
+                document.body.appendChild(petal);
+
+                setTimeout(() => {
+                    petal.remove();
+                }, 6000);
+            }
+        }
+
+        // Переключение режима редактирования текста письма
+        function toggleEditMode() {
+            // Если конверт закрыт — сначала откроем карточку
+            if (!isEnvelopeOpened) {
+                openEnvelope();
+            }
+
+            isEditMode = !isEditMode;
+            const cardScene = document.getElementById('cardScene');
+            const editBanner = document.getElementById('editBanner');
+            const editBtnLabel = document.getElementById('editBtnLabel');
+
+            editableIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.contentEditable = isEditMode ? 'true' : 'false';
+                }
+            });
+
+            if (isEditMode) {
+                cardScene.classList.add('editable-active');
+                editBanner.classList.remove('hidden');
+                editBtnLabel.textContent = 'Готово (сохранить)';
+                const firstEl = document.getElementById('letterPara1');
+                if (firstEl) firstEl.focus();
+            } else {
+                cardScene.classList.remove('editable-active');
+                editBanner.classList.add('hidden');
+                editBtnLabel.textContent = 'Изменить текст / Подписать';
+                saveCustomContent();
+                showToast('Изменения сохранены на открытке');
+            }
+        }
+
+        // Сохранение пользовательского текста в localStorage
+        function saveCustomContent() {
+            try {
+                const data = {};
+                editableIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) data[id] = el.innerText.trim();
+                });
+                localStorage.setItem('mama_card_custom_text_v1', JSON.stringify(data));
+            } catch (e) {
+                // Игнорируем ограничения localStorage
+            }
+        }
+
+        // Загрузка текста из URL-параметров (если открыта персональная ссылка) или из localStorage
+        function loadCustomContent() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+
+                // Если мама открыла ссылку с параметром ?view=mama, прячем панель редактирования для чистоты
+                if (params.get('from') === 'child') {
+                    const customizer = document.getElementById('customizerControls');
+                    if (customizer) customizer.classList.add('hidden');
+                }
+
+                let loadedFromUrl = false;
+                editableIds.forEach(id => {
+                    if (params.has(id)) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.innerText = params.get(id);
+                            loadedFromUrl = true;
+                        }
+                    }
+                });
+
+                if (!loadedFromUrl) {
+                    const saved = localStorage.getItem('mama_card_custom_text_v1');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        editableIds.forEach(id => {
+                            if (parsed[id] && document.getElementById(id)) {
+                                document.getElementById(id).innerText = parsed[id];
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                // В случае ошибки оставляем исходный текст
+            }
+        }
+
+        // Копирование ссылки с зашитым текстом для отправки маме
+        function copyShareLink() {
+            saveCustomContent();
+            const url = new URL(window.location.href.split('?')[0]);
+            url.searchParams.set('from', 'child');
+
+            editableIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    url.searchParams.set(id, el.innerText.trim());
+                }
+            });
+
+            const shareUrl = url.toString();
+            const tempInput = document.createElement('textarea');
+            tempInput.value = shareUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast('Ссылка скопирована! Можно отправить маме');
+        }
+
+        // Скачивание готового чистого файла index.html (уже с вашим текстом и без кнопок редактора) для загрузки на GitHub
+        function downloadReadyHtml() {
+            saveCustomContent();
+
+            // Временно выключаем режим редактирования, чтобы атрибуты contenteditable не попали в итоговый файл
+            const wasEdit = isEditMode;
+            if (wasEdit) {
+                toggleEditMode();
+            }
+
+            // Клонируем весь документ и скрываем кнопку конструктора, чтобы мама видела только чистую открытку
+            const cloneDoc = document.documentElement.cloneNode(true);
+            const cloneCustomizer = cloneDoc.querySelector('#customizerControls');
+            const cloneBanner = cloneDoc.querySelector('#editBanner');
+            if (cloneCustomizer) cloneCustomizer.remove();
+            if (cloneBanner) cloneBanner.remove();
+
+            // Сбрасываем сцену в исходное положение (закрытый конверт), чтобы у мамы сначала появился конверт
+            const cloneEnvelopeScene = cloneDoc.querySelector('#envelopeScene');
+            const cloneEnvelopeBox = cloneDoc.querySelector('#envelopeBox');
+            const cloneCardScene = cloneDoc.querySelector('#cardScene');
+            const cloneBackBtn = cloneDoc.querySelector('#backToEnvelopeBtn');
+
+            if (cloneEnvelopeScene) cloneEnvelopeScene.className = 'envelope-scene w-full flex flex-col items-center justify-center py-8';
+            if (cloneEnvelopeBox) cloneEnvelopeBox.className = 'envelope-wrapper';
+            if (cloneCardScene) cloneCardScene.className = 'hidden opacity-0 translate-y-6 w-full max-w-xl mx-auto';
+            if (cloneBackBtn) cloneBackBtn.className = 'hidden items-center gap-1.5 text-xs sm:text-sm text-inkLight hover:text-ink transition-colors py-1.5 px-3 rounded-full bg-paper/80 border border-gold/30 shadow-sm';
+
+            const htmlContent = '<!DOCTYPE html>\n' + cloneDoc.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'index.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('Готовый файл index.html скачан для GitHub');
+        }
+
+        // Показ аккуратного уведомления внизу экрана
+        function showToast(message) {
+            const toast = document.getElementById('toastNotice');
+            const toastText = document.getElementById('toastText');
+            toastText.textContent = message;
+
+            toast.classList.remove('opacity-0', 'translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-3');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
